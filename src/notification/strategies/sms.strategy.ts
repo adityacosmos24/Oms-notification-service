@@ -15,18 +15,10 @@ export class SmsStrategy implements IChannelStrategy {
   ) {}
 
   async send(context: MessageContext): Promise<void> {
-    if (!context.phone) {
-      throw new BadRequestException('phone is required for SMS channel');
-    }
-
-    if(!context.smsMessage) {
-        throw new BadRequestException('smsMessage is missing in message context');
-    }
-
     await this.communicationService.sendSmsNotification({
       userId: context.userId,
-      phone: context.phone,
-      message: context.smsMessage,
+      phone: context.phone!,
+      message: context.smsMessage!,
     });
   }
 }

@@ -1,13 +1,17 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { Injectable, BadRequestException, Logger } from '@nestjs/common';
 import { MessageContext } from '../types/message-context.type';
 import { BaseHandler } from '../handlers/base.handler';
 import { EmailProcessor } from './email.processor';
 import { SmsProcessor } from './sms.processor';
 import { ChannelStrategyFactory } from '../factories/channel-strategy.factory';
 import { CommunicationChannel } from '../enums/communication-channel.enum';
+import { send } from 'process';
 
 @Injectable()
 export class MessageProcessor {
+    private readonly logger = new Logger(MessageProcessor.name);
+
+
   constructor(
     private readonly baseHandler: BaseHandler,
     private readonly emailProcessor: EmailProcessor,
@@ -52,10 +56,51 @@ export class MessageProcessor {
     }
   }
 
-  private async sendThroughChannels(context: MessageContext) {
-    for (const channel of context.channels) {
-      const strategy = this.channelStrategyFactory.getStrategy(channel);
-      await strategy.send(context);
+  private async sendThroughChannels(context: MessageContext): Promise<void> {
+    const sendTask: Promise<void>[] = [];
+
+    if(this.canSendEmail(context)) {
+        const emailStrategy = this.channelStrategyFactory.getStrategy(
+            CommunicationChannel.EMAIL,
+        );
+
+        sendTask.push(emailStrategy.send(context));
     }
+    else if(context.channels.includes(CommunicationChannel.EMAIL)) {
+        this.logger.debug(
+            `Skipping EMAIL for user ${context.userId} because recipient or message is missing`,
+        );
+    }
+
+    if(this.canSendSms(context)) {
+        const smsStrategy = this.channelStrategyFactory.getStrategy(
+            CommunicationChannel.SMS,
+        );
+
+        sendTask.push(smsStrategy.send(context));
+    }
+    else if(context.channels.includes(CommunicationChannel.SMS)) {
+        this.logger.debug(
+            `Skipping SMS for user ${context.userId} because recipient or message is missing`,
+        );
+    }
+
+    const results = await Promise.allSettled(sendTask);
+
+    results.forEach((result, index)=> {
+        if(result.status === 'rejected') {
+            this.logger.error(
+                `Channel send task ${index} failed: ${result.reason}`,
+            );
+        }
+    });
+  }
+  
+  private canSendEmail(context: MessageContext): boolean {
+    return !!context.email && !! context.emailMessage;
+  }
+  
+  private canSendSms(context: MessageContext): boolean {
+    return !!context.email && !!context.smsMessage;
   }
 }
