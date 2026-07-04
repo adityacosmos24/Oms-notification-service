@@ -11,6 +11,10 @@ export type MessageContext = {
     channels: CommunicationChannel[];
     additionalData: Record<string, any>;
 
+    //set by handlers
+    messageKey?: string,
+
+    //set by processors
     emailMessage?: string;
     smsMessage?: string;
 }

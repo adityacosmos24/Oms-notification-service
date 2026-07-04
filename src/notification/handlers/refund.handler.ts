@@ -10,12 +10,7 @@ export class RefundHandler implements IEventHandler {
   async handle(context: MessageContext): Promise<void> {
     switch (context.eventType) {
       case CommsEventType.REFUND_INITIATED:
-        context.emailMessage = `Refund initiated for order ${
-          context.orderId ?? ''
-        }.`;
-        context.smsMessage = `Refund initiated for order ${
-          context.orderId ?? ''
-        }.`;
+        context.messageKey = 'REFUND_INITIATED';
         return;
 
       default:

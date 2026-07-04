@@ -13,21 +13,11 @@ export class ExchangeHandler implements IEventHandler {
   async handle(context: MessageContext): Promise<void> {
     switch (context.eventType) {
       case CommsEventType.EXCHANGE_INITIATED:
-        context.emailMessage = `Exchange initiated for order ${
-          context.orderId ?? ''
-        }.`;
-        context.smsMessage = `Exchange initiated for order ${
-          context.orderId ?? ''
-        }.`;
+        context.messageKey = 'EXCHANGE_INITIATED';
         return;
 
       case CommsEventType.EXCHANGE_CANCELLED:
-        context.emailMessage = `Exchange cancelled for order ${
-          context.orderId ?? ''
-        }.`;
-        context.smsMessage = `Exchange cancelled for order ${
-          context.orderId ?? ''
-        }.`;
+        context.messageKey = 'EXCHANGE_CANCELLED';
         return;
 
       default:
