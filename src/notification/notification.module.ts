@@ -1,10 +1,10 @@
 import { Module } from '@nestjs/common';
 import { NotificationController } from './notification.controller';
-import { NotificationService } from './notification.service';
 import { EmailStrategy } from './strategies/email.strategy';
 import { SmsStrategy } from './strategies/sms.strategy';
 import { ChannelStrategyFactory } from './factories/channel-strategy.factory';
 import { CommunicationService } from './services/communication.service';
+import { OrchestratorService } from './services/orchestrator.service';
 import { BaseHandler } from './handlers/base.handler';
 import { OrderHandler } from './handlers/order.handler';
 import { ReturnHandler } from './handlers/return.handler';
@@ -17,7 +17,7 @@ import { SmsProcessor } from './processors/sms.processor';
 @Module({
   controllers: [NotificationController],
   providers: [
-    NotificationService,
+    OrchestratorService,
     MessageProcessor,
     EmailProcessor,
     SmsProcessor,
@@ -32,4 +32,4 @@ import { SmsProcessor } from './processors/sms.processor';
     RefundHandler,
   ],
 })
-export class NotificationModule {}  
+export class NotificationModule {}
