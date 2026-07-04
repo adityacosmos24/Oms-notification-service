@@ -13,18 +13,11 @@ export class EmailStrategy implements IChannelStrategy {
   ) {}
 
   async send(context: MessageContext): Promise<void> {
-    if(!context.email) {
-        throw new BadRequestException('email is required for EMAIL channel');
-    }
-    
-    if (!context.emailMessage) {
-      throw new BadRequestException('emailMessage is missing in message context');
-    }
 
     await this.communicationService.sendEmailNotification({
       userId: context.userId,
-      email: context.email,
-      message: context.emailMessage,
+      email: context.email!,
+      message: context.emailMessage!,
     });
   }
 }
