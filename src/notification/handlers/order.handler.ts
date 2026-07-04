@@ -16,46 +16,23 @@ export class OrderHandler implements IEventHandler {
   async handle(context: MessageContext): Promise<void> {
     switch (context.eventType) {
       case CommsEventType.ORDER_CONFIRM:
-        context.emailMessage = `Hi ${
-          context.additionalData.customerName ?? 'Customer'
-        }, your order ${context.orderId ?? ''} has been confirmed.`;
-        context.smsMessage = `Order ${
-          context.orderId ?? ''
-        } confirmed successfully.`;
+        context.messageKey = 'ORDER_CONFIRM';
         return;
 
       case CommsEventType.ORDER_SHIPPED:
-        context.emailMessage = `Hi ${
-          context.additionalData.customerName ?? 'Customer'
-        }, your order ${context.orderId ?? ''} has been shipped.`;
-        context.smsMessage = `Order ${
-          context.orderId ?? ''
-        } shipped successfully.`;
+        context.messageKey = 'ORDER_SHIPPED';
         return;
 
       case CommsEventType.ORDER_DELIVERED:
-        context.emailMessage = `Hi ${
-          context.additionalData.customerName ?? 'Customer'
-        }, your order ${context.orderId ?? ''} has been delivered.`;
-        context.smsMessage = `Order ${
-          context.orderId ?? ''
-        } delivered successfully.`;
+        context.messageKey = 'ORDER_DELIVERED';
         return;
 
       case CommsEventType.ORDER_CANCELLED:
-        context.emailMessage = `Your order ${
-          context.orderId ?? ''
-        } has been cancelled.`;
-        context.smsMessage = `Order ${
-          context.orderId ?? ''
-        } has been cancelled.`;
+        context.messageKey = 'ORDER_CANCELLED';
         return;
 
       case CommsEventType.ORDER_FAILED:
-        context.emailMessage = `Your order ${
-          context.orderId ?? ''
-        } has failed.`;
-        context.smsMessage = `Order ${context.orderId ?? ''} failed.`;
+        context.messageKey = 'ORDER_FAILED';
         return;
 
       default:

@@ -10,11 +10,17 @@ import { OrderHandler } from './handlers/order.handler';
 import { ReturnHandler } from './handlers/return.handler';
 import { ExchangeHandler } from './handlers/exchange.handler';
 import { RefundHandler } from './handlers/refund.handler';
+import { MessageProcessor } from './processors/message.processor';
+import { EmailProcessor } from './processors/email.processor';
+import { SmsProcessor } from './processors/sms.processor';
 
 @Module({
   controllers: [NotificationController],
   providers: [
     NotificationService,
+    MessageProcessor,
+    EmailProcessor,
+    SmsProcessor,
     EmailStrategy,
     SmsStrategy,
     ChannelStrategyFactory,
@@ -26,4 +32,4 @@ import { RefundHandler } from './handlers/refund.handler';
     RefundHandler,
   ],
 })
-export class NotificationModule {}
+export class NotificationModule {}  

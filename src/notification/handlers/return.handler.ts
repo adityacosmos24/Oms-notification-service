@@ -13,21 +13,11 @@ export class ReturnHandler implements IEventHandler {
   async handle(context: MessageContext): Promise<void> {
     switch (context.eventType) {
       case CommsEventType.RETURN_INITIATED:
-        context.emailMessage = `Return initiated for order ${
-          context.orderId ?? ''
-        }.`;
-        context.smsMessage = `Return initiated for order ${
-          context.orderId ?? ''
-        }.`;
+        context.messageKey = 'RETURN_INITIATED';
         return;
 
       case CommsEventType.RETURN_CANCELLED:
-        context.emailMessage = `Return cancelled for order ${
-          context.orderId ?? ''
-        }.`;
-        context.smsMessage = `Return cancelled for order ${
-          context.orderId ?? ''
-        }.`;
+        context.messageKey = 'RETURN_CANCELLED';
         return;
 
       default:

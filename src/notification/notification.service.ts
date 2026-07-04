@@ -1,30 +1,29 @@
 import { Injectable } from '@nestjs/common';
 import { CreateNotificationDto } from './dto/create-notification.dto';
-import { ChannelStrategyFactory } from './factories/channel-strategy.factory';
 import { MessageContext } from './types/message-context.type';
-import { BaseHandler } from './handlers/base.handler';
+import { MessageProcessor } from './processors/message.processor';
 
 @Injectable()
 export class NotificationService {
   constructor(
-    private readonly channelStrategyFactory: ChannelStrategyFactory,
-    private readonly baseHandler: BaseHandler,
+    private readonly messageProcessor: MessageProcessor,
   ) {}
 
   async sendNotification(createNotificationDto: CreateNotificationDto) {
     const context = this.buildMessageContext(createNotificationDto);
 
-    await this.baseHandler.process(context);
-
-    for (const channel of context.channels) {
-      const strategy = this.channelStrategyFactory.getStrategy(channel);
-      await strategy.send(context);
-    }
+    await this.messageProcessor.process(context);
 
     return {
-      success: true,
-      message: 'Notification processed successfully',
-      eventType: context.eventType,
+        success: true,
+        message: 'Notification processed successfully',
+        data: {
+            eventType: context.eventType,
+            messageKey: context.messageKey,
+            channels: context.channels,
+            emailMessage: context.emailMessage ?? null,
+            smsMessage: context.smsMessage ?? null,
+        },
     };
   }
 
