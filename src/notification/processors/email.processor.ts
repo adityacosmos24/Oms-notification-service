@@ -8,53 +8,51 @@ export class EmailProcessor {
       throw new BadRequestException('messageKey is missing in context');
     }
 
-    const customerName = context.additionalData.customerName ?? 'Customer';
-    const orderId = context.orderId ?? '';
-    const orderAmount = context.additionalData.orderAmount;
-    const itemCount = context.additionalData.itemCount;
-    const refundAmount = context.additionalData.refundAmount;
-    const refundMode = context.additionalData.refundMode;
-    const exchangeProductName = context.additionalData.exchangeProductName;
-
     switch (context.messageKey) {
       case 'ORDER_CONFIRM':
-        context.emailMessage = `Hi ${customerName}, your order ${orderId} has been confirmed. Total amount: ₹${orderAmount}. Items: ${itemCount}.`;
+        context.emailMessage = `Hi ${
+          context.additionalData.customerName ?? 'Customer'
+        }, your order ${context.orderId ?? ''} has been confirmed.`;
         return;
 
       case 'ORDER_SHIPPED':
-        context.emailMessage = `Hi ${customerName}, your order ${orderId} has been shipped.`;
+        context.emailMessage = `Hi ${
+          context.additionalData.customerName ?? 'Customer'
+        }, your order ${context.orderId ?? ''} has been shipped.`;
         return;
 
       case 'ORDER_DELIVERED':
-        context.emailMessage = `Hi ${customerName}, your order ${orderId} has been delivered.`;
+        context.emailMessage = `Hi ${
+          context.additionalData.customerName ?? 'Customer'
+        }, your order ${context.orderId ?? ''} has been delivered.`;
         return;
 
       case 'ORDER_CANCELLED':
-        context.emailMessage = `Hi ${customerName}, your order ${orderId} has been cancelled.`;
+        context.emailMessage = `Your order ${context.orderId ?? ''} has been cancelled.`;
         return;
 
       case 'ORDER_FAILED':
-        context.emailMessage = `Hi ${customerName}, your order ${orderId} has failed.`;
+        context.emailMessage = `Your order ${context.orderId ?? ''} has failed.`;
         return;
 
       case 'RETURN_INITIATED':
-        context.emailMessage = `Hi ${customerName}, return has been initiated for order ${orderId}.`;
+        context.emailMessage = `Return initiated for order ${context.orderId ?? ''}.`;
         return;
 
       case 'RETURN_CANCELLED':
-        context.emailMessage = `Hi ${customerName}, return has been cancelled for order ${orderId}.`;
+        context.emailMessage = `Return cancelled for order ${context.orderId ?? ''}.`;
         return;
 
       case 'EXCHANGE_INITIATED':
-        context.emailMessage = `Hi ${customerName}, exchange has been initiated for ${exchangeProductName} in order ${orderId}.`;
+        context.emailMessage = `Exchange initiated for order ${context.orderId ?? ''}.`;
         return;
 
       case 'EXCHANGE_CANCELLED':
-        context.emailMessage = `Hi ${customerName}, exchange has been cancelled for order ${orderId}.`;
+        context.emailMessage = `Exchange cancelled for order ${context.orderId ?? ''}.`;
         return;
 
       case 'REFUND_INITIATED':
-        context.emailMessage = `Hi ${customerName}, refund of ₹${refundAmount} has been initiated for order ${orderId} via ${refundMode}.`;
+        context.emailMessage = `Refund initiated for order ${context.orderId ?? ''}.`;
         return;
 
       default:

@@ -2,7 +2,6 @@ import { Injectable, BadRequestException } from '@nestjs/common';
 import { IEventHandler } from '../interfaces/event-handler.interface';
 import { MessageContext } from '../types/message-context.type';
 import { CommsEventType } from '../enums/comms-event-type.enum';
-import { HelpersService } from '../services/helpers.service';
 
 @Injectable()
 export class OrderHandler implements IEventHandler {
@@ -14,11 +13,7 @@ export class OrderHandler implements IEventHandler {
     CommsEventType.ORDER_FAILED,
   ];
 
-  constructor(private readonly helpersService: HelpersService) {}
-
   async handle(context: MessageContext): Promise<void> {
-    await this.enrichOrderData(context);
-
     switch (context.eventType) {
       case CommsEventType.ORDER_CONFIRM:
         context.messageKey = 'ORDER_CONFIRM';
@@ -45,18 +40,5 @@ export class OrderHandler implements IEventHandler {
           `OrderHandler does not support event ${context.eventType}`,
         );
     }
-  }
-
-  private async enrichOrderData(context: MessageContext): Promise<void> {
-    const orderDetails = await this.helpersService.getOrderDetails(
-      context.orderId,
-    );
-
-    if (!orderDetails) return;
-
-    context.additionalData = {
-      ...context.additionalData,
-      ...orderDetails,
-    };
   }
 }
