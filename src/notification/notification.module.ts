@@ -5,6 +5,7 @@ import { SmsStrategy } from './strategies/sms.strategy';
 import { ChannelStrategyFactory } from './factories/channel-strategy.factory';
 import { CommunicationService } from './services/communication.service';
 import { OrchestratorService } from './services/orchestrator.service';
+import { HelpersService } from './services/helpers.service';
 import { BaseHandler } from './handlers/base.handler';
 import { OrderHandler } from './handlers/order.handler';
 import { ReturnHandler } from './handlers/return.handler';
@@ -18,6 +19,7 @@ import { SmsProcessor } from './processors/sms.processor';
   controllers: [NotificationController],
   providers: [
     OrchestratorService,
+    HelpersService,
     MessageProcessor,
     EmailProcessor,
     SmsProcessor,
