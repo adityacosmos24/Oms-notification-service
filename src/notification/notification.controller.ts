@@ -1,5 +1,4 @@
 import { Body, Controller, Post } from '@nestjs/common';
-import { NotificationService } from './notification.service';
 import { CreateNotificationDto } from './dto/create-notification.dto';
 import { OrchestratorService } from './services/orchestrator.service';
 

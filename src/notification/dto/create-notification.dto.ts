@@ -8,7 +8,7 @@ import {
     IsObject,
 } from 'class-validator';
 import { CommunicationChannel } from '../enums/communication-channel.enum';
-import { CommsEventType } from '../enums/comms-event-type.enum';
+import { CommsEventType, EmailMessageType, SmsMessageType, } from '../config/comms.enum';
 
 export class CreateNotificationDto {
     @IsString()

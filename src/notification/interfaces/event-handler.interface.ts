@@ -1,5 +1,5 @@
 import { MessageContext } from "../types/message-context.type";
-import { CommsEventType } from "../enums/comms-event-type.enum";
+import { CommsEventType, EmailMessageType, SmsMessageType, } from '../config/comms.enum';
 
 export interface IEventHandler {
     readonly supportedEvents: CommsEventType[];

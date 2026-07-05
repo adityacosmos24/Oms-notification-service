@@ -1,5 +1,5 @@
 import { CommunicationChannel } from "../enums/communication-channel.enum";
-import { CommsEventType } from "../enums/comms-event-type.enum";
+import { CommsEventType, EmailMessageType, SmsMessageType, } from '../config/comms.enum';
 
 export type MessageContext = {
     userId: string;
@@ -7,14 +7,16 @@ export type MessageContext = {
     parentOrderId?: string;
     email?: string;
     phone?: string;
+
     eventType: CommsEventType;
     channels: CommunicationChannel[];
     additionalData: Record<string, any>;
 
-    //set by handlers
-    messageKey?: string,
+    // Set by handlers
+    emailMessageType?: EmailMessageType;
+    smsMessageType?: SmsMessageType;
 
-    //set by processors
+    // Set by processors
     emailMessage?: string;
     smsMessage?: string;
 }

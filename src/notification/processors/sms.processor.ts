@@ -1,60 +1,70 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { MessageContext } from '../types/message-context.type';
+import { SmsMessageType } from '../config/comms.enum';
 
 @Injectable()
 export class SmsProcessor {
   process(context: MessageContext): void {
-    if (!context.messageKey) {
-      throw new BadRequestException('messageKey is missing in context');
+    if (!context.smsMessageType) {
+      throw new BadRequestException('smsMessageType is missing in context');
     }
 
     const orderId = context.orderId ?? '';
     const refundAmount = context.additionalData.refundAmount;
+    const itemCount = context.additionalData.itemCount ?? 1;
 
-    switch (context.messageKey) {
-      case 'ORDER_CONFIRM':
+    switch (context.smsMessageType) {
+      case SmsMessageType.ORDER_CONFIRM:
         context.smsMessage = `Order ${orderId} confirmed successfully.`;
         return;
 
-      case 'ORDER_SHIPPED':
+      case SmsMessageType.ORDER_CONFIRM_QTY_MORE:
+        context.smsMessage = `Order ${orderId} confirmed successfully for ${itemCount} items.`;
+        return;
+
+      case SmsMessageType.ORDER_SHIPPED:
         context.smsMessage = `Order ${orderId} shipped successfully.`;
         return;
 
-      case 'ORDER_DELIVERED':
+      case SmsMessageType.ORDER_SHIPPED_QTY_2:
+        context.smsMessage = `2 items from order ${orderId} have been shipped.`;
+        return;
+
+      case SmsMessageType.ORDER_DELIVERED:
         context.smsMessage = `Order ${orderId} delivered successfully.`;
         return;
 
-      case 'ORDER_CANCELLED':
+      case SmsMessageType.ORDER_CANCELLED:
         context.smsMessage = `Order ${orderId} has been cancelled.`;
         return;
 
-      case 'ORDER_FAILED':
+      case SmsMessageType.ORDER_FAILED:
         context.smsMessage = `Order ${orderId} failed.`;
         return;
 
-      case 'RETURN_INITIATED':
+      case SmsMessageType.RETURN_INITIATED:
         context.smsMessage = `Return initiated for order ${orderId}.`;
         return;
 
-      case 'RETURN_CANCELLED':
+      case SmsMessageType.RETURN_CANCELLED:
         context.smsMessage = `Return cancelled for order ${orderId}.`;
         return;
 
-      case 'EXCHANGE_INITIATED':
+      case SmsMessageType.EXCHANGE_INITIATED:
         context.smsMessage = `Exchange initiated for order ${orderId}.`;
         return;
 
-      case 'EXCHANGE_CANCELLED':
+      case SmsMessageType.EXCHANGE_CANCELLED:
         context.smsMessage = `Exchange cancelled for order ${orderId}.`;
         return;
 
-      case 'REFUND_INITIATED':
+      case SmsMessageType.REFUND_INITIATED:
         context.smsMessage = `Refund of ₹${refundAmount} initiated for order ${orderId}.`;
         return;
 
       default:
         throw new BadRequestException(
-          `Unsupported messageKey for sms: ${context.messageKey}`,
+          `Unsupported smsMessageType: ${context.smsMessageType}`,
         );
     }
   }
