@@ -12,7 +12,7 @@ export class SmsProcessor {
     const orderId = context.orderId ?? '';
     const refundAmount = context.additionalData.refundAmount;
     const itemCount = context.additionalData.itemCount ?? 1;
-
+// Later this smsMessageType will also map to provider templateId via SMS_TEMPLATE_ID_MAP
     switch (context.smsMessageType) {
       case SmsMessageType.ORDER_CONFIRM:
         context.smsMessage = `Order ${orderId} confirmed successfully.`;
