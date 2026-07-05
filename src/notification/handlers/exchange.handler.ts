@@ -1,12 +1,9 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { IEventHandler } from '../interfaces/event-handler.interface';
 import { MessageContext } from '../types/message-context.type';
-import {
-  CommsEventType,
-  EmailMessageType,
- SmsMessageType,
-} from '../config/comms.enum';
+import { CommsEventType } from '../config/comms.enum';
 import { HelpersService } from '../services/helpers.service';
+import { MessageTypeResolver } from '../resolvers/message-type.resolver';
 
 @Injectable()
 export class ExchangeHandler implements IEventHandler {
@@ -22,13 +19,12 @@ export class ExchangeHandler implements IEventHandler {
 
     switch (context.eventType) {
       case CommsEventType.EXCHANGE_INITIATED:
-        context.emailMessageType = EmailMessageType.EXCHANGE_INITIATED;
-        context.smsMessageType = SmsMessageType.EXCHANGE_INITIATED;
-        return;
-
       case CommsEventType.EXCHANGE_CANCELLED:
-        context.emailMessageType = EmailMessageType.EXCHANGE_CANCELLED;
-        context.smsMessageType = SmsMessageType.EXCHANGE_CANCELLED;
+        context.emailMessageType = MessageTypeResolver.resolveEmailMessageType(
+          context.eventType,
+        );
+        context.smsMessageType =
+          MessageTypeResolver.resolveSmsMessageType(context);
         return;
 
       default:
