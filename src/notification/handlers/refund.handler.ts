@@ -1,7 +1,11 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { IEventHandler } from '../interfaces/event-handler.interface';
 import { MessageContext } from '../types/message-context.type';
-import { CommsEventType } from '../enums/comms-event-type.enum';
+import {
+  CommsEventType,
+  EmailMessageType,
+  SmsMessageType,
+} from '../config/comms.enum';
 import { HelpersService } from '../services/helpers.service';
 
 @Injectable()
@@ -15,7 +19,8 @@ export class RefundHandler implements IEventHandler {
 
     switch (context.eventType) {
       case CommsEventType.REFUND_INITIATED:
-        context.messageKey = 'REFUND_INITIATED';
+        context.emailMessageType = EmailMessageType.REFUND_INITIATED;
+        context.smsMessageType = SmsMessageType.REFUND_INITIATED;
         return;
 
       default:

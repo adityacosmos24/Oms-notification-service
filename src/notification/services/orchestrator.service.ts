@@ -10,18 +10,20 @@ export class OrchestratorService {
     ) {}
 
     async processNotification(payload: CreateNotificationDto) {
-        const context = this.buildMessageContext(payload);
-        await this.messageProcessor.process(context);
+    const context = this.buildMessageContext(payload);
+
+    await this.messageProcessor.process(context);
 
         return {
             success: true,
             message: 'Notification processed successfully',
             data: {
-                eventType: context.eventType,
-                messageKey: context.messageKey,
-                channels: context.channels,
-                emailMessage: context.emailMessage ?? null,
-                smsMessage: context.smsMessage ?? null,
+            eventType: context.eventType,
+            emailMessageType: context.emailMessageType ?? null,
+            smsMessageType: context.smsMessageType ?? null,
+            channels: context.channels,
+            emailMessage: context.emailMessage ?? null,
+            smsMessage: context.smsMessage ?? null,
             },
         };
     }

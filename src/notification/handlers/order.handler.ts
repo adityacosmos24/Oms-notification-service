@@ -1,7 +1,11 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { IEventHandler } from '../interfaces/event-handler.interface';
 import { MessageContext } from '../types/message-context.type';
-import { CommsEventType } from '../enums/comms-event-type.enum';
+import {
+  CommsEventType,
+  EmailMessageType,
+  SmsMessageType,
+} from '../config/comms.enum';
 import { HelpersService } from '../services/helpers.service';
 
 @Injectable()
@@ -21,23 +25,28 @@ export class OrderHandler implements IEventHandler {
 
     switch (context.eventType) {
       case CommsEventType.ORDER_CONFIRM:
-        context.messageKey = 'ORDER_CONFIRM';
+        context.emailMessageType = EmailMessageType.ORDER_CONFIRM;
+        context.smsMessageType = this.resolveOrderConfirmSmsType(context);
         return;
 
       case CommsEventType.ORDER_SHIPPED:
-        context.messageKey = 'ORDER_SHIPPED';
+        context.emailMessageType = EmailMessageType.ORDER_SHIPPED;
+        context.smsMessageType = this.resolveOrderShippedSmsType(context);
         return;
 
       case CommsEventType.ORDER_DELIVERED:
-        context.messageKey = 'ORDER_DELIVERED';
+        context.emailMessageType = EmailMessageType.ORDER_DELIVERED;
+        context.smsMessageType = SmsMessageType.ORDER_DELIVERED;
         return;
 
       case CommsEventType.ORDER_CANCELLED:
-        context.messageKey = 'ORDER_CANCELLED';
+        context.emailMessageType = EmailMessageType.ORDER_CANCELLED;
+        context.smsMessageType = SmsMessageType.ORDER_CANCELLED;
         return;
 
       case CommsEventType.ORDER_FAILED:
-        context.messageKey = 'ORDER_FAILED';
+        context.emailMessageType = EmailMessageType.ORDER_FAILED;
+        context.smsMessageType = SmsMessageType.ORDER_FAILED;
         return;
 
       default:
@@ -58,5 +67,29 @@ export class OrderHandler implements IEventHandler {
       ...context.additionalData,
       ...orderDetails,
     };
+  }
+
+  private resolveOrderConfirmSmsType(
+    context: MessageContext,
+  ): SmsMessageType {
+    const itemCount = context.additionalData.itemCount ?? 1;
+
+    if (itemCount > 1) {
+      return SmsMessageType.ORDER_CONFIRM_QTY_MORE;
+    }
+
+    return SmsMessageType.ORDER_CONFIRM;
+  }
+
+  private resolveOrderShippedSmsType(
+    context: MessageContext,
+  ): SmsMessageType {
+    const itemCount = context.additionalData.itemCount ?? 1;
+
+    if (itemCount === 2) {
+      return SmsMessageType.ORDER_SHIPPED_QTY_2;
+    }
+
+    return SmsMessageType.ORDER_SHIPPED;
   }
 }
