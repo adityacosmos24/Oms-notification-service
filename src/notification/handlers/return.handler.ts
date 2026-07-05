@@ -2,6 +2,7 @@ import { Injectable, BadRequestException } from '@nestjs/common';
 import { IEventHandler } from '../interfaces/event-handler.interface';
 import { MessageContext } from '../types/message-context.type';
 import { CommsEventType } from '../enums/comms-event-type.enum';
+import { HelpersService } from '../services/helpers.service';
 
 @Injectable()
 export class ReturnHandler implements IEventHandler {
@@ -10,7 +11,11 @@ export class ReturnHandler implements IEventHandler {
     CommsEventType.RETURN_CANCELLED,
   ];
 
+  constructor(private readonly helpersService: HelpersService) {}
+
   async handle(context: MessageContext): Promise<void> {
+    await this.enrichReturnData(context);
+
     switch (context.eventType) {
       case CommsEventType.RETURN_INITIATED:
         context.messageKey = 'RETURN_INITIATED';
@@ -25,5 +30,18 @@ export class ReturnHandler implements IEventHandler {
           `ReturnHandler does not support event ${context.eventType}`,
         );
     }
+  }
+
+  private async enrichReturnData(context: MessageContext): Promise<void> {
+    const returnDetails = await this.helpersService.getReturnDetails(
+      context.orderId,
+    );
+
+    if (!returnDetails) return;
+
+    context.additionalData = {
+      ...context.additionalData,
+      ...returnDetails,
+    };
   }
 }
