@@ -1,4 +1,6 @@
 import { Module } from '@nestjs/common';
+import { ClientsModule, Transport } from '@nestjs/microservices';
+
 import { NotificationController } from './controllers/notification.controller';
 import { OrchestratorService } from './services/orchestrator.service';
 import { MessageProcessor } from './processors/message.processor';
@@ -16,8 +18,29 @@ import { SmsStrategy } from './strategies/sms.strategy';
 import { CommunicationService } from './services/communication.service';
 import { KafkaProducerService } from './services/kafka-producer.service';
 import { NotificationConsumer } from './consumers/notification.consumer';
+import {
+  KAFKA_CLIENTS,
+  KAFKA_CONSUMER_GROUPS,
+} from './config/kafka.constants';
 
 @Module({
+  imports: [
+    ClientsModule.register([
+      {
+        name: KAFKA_CLIENTS.NOTIFICATION_CLIENT,
+        transport: Transport.KAFKA,
+        options: {
+          client: {
+            clientId: KAFKA_CLIENTS.NOTIFICATION_CLIENT,
+            brokers: (process.env.KAFKA_BROKERS || 'localhost:9092').split(','),
+          },
+          consumer: {
+            groupId: `${KAFKA_CONSUMER_GROUPS.NOTIFICATION_GROUP}-producer`,
+          },
+        },
+      },
+    ]),
+  ],
   controllers: [NotificationController],
   providers: [
     OrchestratorService,
@@ -37,6 +60,6 @@ import { NotificationConsumer } from './consumers/notification.consumer';
     KafkaProducerService,
     NotificationConsumer,
   ],
-  exports: [KafkaProducerService, NotificationConsumer],
+  exports: [KafkaProducerService],
 })
 export class NotificationModule {}
