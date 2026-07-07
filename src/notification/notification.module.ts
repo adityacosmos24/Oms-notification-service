@@ -1,6 +1,9 @@
 import { Module } from '@nestjs/common';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { MongooseModule } from '@nestjs/mongoose';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { OrderEntity } from './entities/order.entity';
+import { RefundEntity } from './entities/refund.entity';
 
 import { NotificationController } from './controllers/notification.controller';
 import { OrchestratorService } from './services/orchestrator.service';
@@ -30,6 +33,8 @@ import {
 import { TenantConfigService } from './services/tenant-config.service';
 import { TenantConfigController } from './controllers/tenant-config.controller';
 
+import { TestDataController } from './controllers/test-data.controller';
+
 
 @Module({
   imports: [
@@ -48,6 +53,7 @@ import { TenantConfigController } from './controllers/tenant-config.controller';
         },
       },
     ]),
+    TypeOrmModule.forFeature([OrderEntity, RefundEntity]),
     MongooseModule.forFeature([
       {
         name: TenantConfig.name,
@@ -55,7 +61,7 @@ import { TenantConfigController } from './controllers/tenant-config.controller';
       },
     ]),
   ],
-  controllers: [NotificationController, TenantConfigController],
+  controllers: [NotificationController, TenantConfigController, TestDataController],
   providers: [
     OrchestratorService,
     MessageProcessor,

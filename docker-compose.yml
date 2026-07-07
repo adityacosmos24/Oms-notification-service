@@ -21,12 +21,10 @@ services:
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
       KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:29092,PLAINTEXT_HOST://0.0.0.0:9092
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
-
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
 
   mongo:
@@ -40,5 +38,20 @@ services:
     volumes:
       - mongo_data:/data/db
 
+  mariadb:
+    image: mariadb:11
+    container_name: notification-mariadb
+    restart: unless-stopped
+    ports:
+      - '3306:3306'
+    environment:
+      MARIADB_ROOT_PASSWORD: root
+      MARIADB_DATABASE: notification_system
+      MARIADB_USER: app_user
+      MARIADB_PASSWORD: app_password
+    volumes:
+      - mariadb_data:/var/lib/mysql
+
 volumes:
   mongo_data:
+  mariadb_data:
