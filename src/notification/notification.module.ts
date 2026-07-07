@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ClientsModule, Transport } from '@nestjs/microservices';
+import { MongooseModule } from '@nestjs/mongoose';
 
 import { NotificationController } from './controllers/notification.controller';
 import { OrchestratorService } from './services/orchestrator.service';
@@ -22,6 +23,13 @@ import {
   KAFKA_CLIENTS,
   KAFKA_CONSUMER_GROUPS,
 } from './config/kafka.constants';
+import {
+  TenantConfig,
+  TenantConfigSchema,
+} from './schemas/tenant-config.schema';
+import { TenantConfigService } from './services/tenant-config.service';
+import { TenantConfigController } from './controllers/tenant-config.controller';
+
 
 @Module({
   imports: [
@@ -40,8 +48,14 @@ import {
         },
       },
     ]),
+    MongooseModule.forFeature([
+      {
+        name: TenantConfig.name,
+        schema: TenantConfigSchema,
+      },
+    ]),
   ],
-  controllers: [NotificationController],
+  controllers: [NotificationController, TenantConfigController],
   providers: [
     OrchestratorService,
     MessageProcessor,
@@ -59,7 +73,8 @@ import {
     CommunicationService,
     KafkaProducerService,
     NotificationConsumer,
+    TenantConfigService,
   ],
-  exports: [KafkaProducerService],
+  exports: [KafkaProducerService, TenantConfigService],
 })
 export class NotificationModule {}

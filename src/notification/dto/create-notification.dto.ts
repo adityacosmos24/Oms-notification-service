@@ -1,44 +1,39 @@
 import {
-    IsArray,
-    ArrayNotEmpty,
-    IsEmail,
-    IsOptional,
-    IsString,
-    IsEnum,
-    IsObject,
+  IsArray,
+  IsEnum,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
 } from 'class-validator';
+import { CommsEventType } from '../enums/comms-event-type.enum';
 import { CommunicationChannel } from '../enums/communication-channel.enum';
-import { CommsEventType, EmailMessageType, SmsMessageType, } from '../config/comms.enum';
 
 export class CreateNotificationDto {
-    @IsString()
-    userId:string;
+  @IsString()
+  @IsNotEmpty()
+  userId: string;
 
-    @IsOptional()
-    @IsString()
-    orderId?: string;
+  @IsString()
+  @IsNotEmpty()
+  orderId: string;
 
-    @IsOptional()
-    @IsString()
-    parentOrderId?: string;
+  @IsString()
+  @IsNotEmpty()
+  tenantId: string;
 
-    @IsOptional()
-    @IsEmail()
-    email?:string;
+  @IsOptional()
+  @IsString()
+  email?: string;
 
-    @IsOptional()
-    @IsString()
-    phone?:string;
+  @IsOptional()
+  @IsString()
+  phone?: string;
 
-    @IsEnum(CommsEventType)
-    eventType: CommsEventType;
+  @IsEnum(CommsEventType)
+  eventType: CommsEventType;
 
-    @IsArray()
-    @ArrayNotEmpty()
-    @IsEnum(CommunicationChannel, { each: true })
-    channels: CommunicationChannel[];
-
-    @IsOptional()
-    @IsObject()
-    additionalData?: Record<string, any>;
+  @IsOptional()
+  @IsArray()
+  @IsEnum(CommunicationChannel, { each: true })
+  channels?: CommunicationChannel[];
 }
