@@ -1,49 +1,70 @@
-import { Injectable } from "@nestjs/common";
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { OrderEntity } from '../entities/order.entity';
+import { RefundEntity } from '../entities/refund.entity';
 
 @Injectable()
 export class HelpersService {
-    async getOrderDetails(orderId?: string) {
-        if (!orderId) return null;
+  constructor(
+    @InjectRepository(OrderEntity)
+    private readonly orderRepository: Repository<OrderEntity>,
 
-        //Fake DB response for now 
-        return {
-            orderId,
-            orderAmount: 2499,
-            itemCount: 'Aditya',
-            productNames: ['Running Shoes', 'T-Shirt'],
-            trackingId: 'TRK12345',
-        }
+    @InjectRepository(RefundEntity)
+    private readonly refundRepository: Repository<RefundEntity>,
+  ) {}
+
+  async getOrderDetails(orderId: string) {
+    const order = await this.orderRepository.findOne({
+      where: { orderId },
+    });
+
+    if (!order) {
+      throw new NotFoundException(`Order not found for orderId=${orderId}`);
     }
 
-    async getReturnDetails(orderId?: string) {
-        if (!orderId) return null;
+    return {
+      orderId: order.orderId,
+      userId: order.userId,
+      tenantId: order.tenantId,
+      customerName: order.customerName,
+      email: order.email,
+      phone: order.phone,
+      orderAmount: Number(order.orderAmount),
+      itemCount: order.itemCount,
+      status: order.status,
+    };
+  }
 
-        return {
-            orderId,
-            returnReason: 'Size issue',
-            refundAmount: 1499,
-            customerName: 'Aditya',
-        };
+  async getRefundDetails(orderId: string) {
+    const refund = await this.refundRepository.findOne({
+      where: { orderId },
+    });
+
+    if (!refund) {
+      throw new NotFoundException(`Refund not found for orderId=${orderId}`);
     }
 
-    async getExchangeDetails(orderId?: string) {
-        if (!orderId) return null;
+    return {
+      orderId: refund.orderId,
+      tenantId: refund.tenantId,
+      refundAmount: Number(refund.refundAmount),
+      refundMode: refund.refundMode,
+      status: refund.status,
+    };
+  }
 
-        return {
-            orderId,
-            exchangeProductName: 'Blue Hoodie - Size M',
-            customerName: 'Aditya',
-        };
-    }
+  async getReturnDetails(orderId: string) {
+    return {
+      orderId,
+      returnStatus: 'INITIATED',
+    };
+  }
 
-    async getRefundDetails(orderId?: string) {
-        if (!orderId) return null;
-
-        return {
-            orderId,
-            refundAmount: 1499,
-            refundMode: 'BANK',
-            customerName: 'Aditya',
-        };
-    }
+  async getExchangeDetails(orderId: string) {
+    return {
+      orderId,
+      exchangeStatus: 'INITIATED',
+    };
+  }
 }
