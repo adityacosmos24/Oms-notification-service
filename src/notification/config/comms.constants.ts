@@ -43,3 +43,7 @@ export const DEFAULT_SMS_MESSAGE_TYPE_MAP: Partial<
 
   [CommsEventType.REFUND_INITIATED]: SmsMessageType.REFUND_INITIATED,
 };
+
+export const COMMS_CONFIG_KEYS = {
+  CHANNEL_CONFIG: 'COMMS_CHANNEL_CONFIG',
+};

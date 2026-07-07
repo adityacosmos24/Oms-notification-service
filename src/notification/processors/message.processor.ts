@@ -19,7 +19,7 @@ export class MessageProcessor {
     private readonly channelStrategyFactory: ChannelStrategyFactory,
   ) {}
 
-  async process(context: MessageContext): Promise<void> {
+  async process(context: MessageContext): Promise<MessageContext> {
     this.validateContext(context);
 
     // Step 1: domain handler decides logical message key
@@ -30,6 +30,8 @@ export class MessageProcessor {
 
     // Step 3: send through selected channels
     await this.sendThroughChannels(context);
+
+    return context;
   }
 
   private validateContext(context: MessageContext) {

@@ -1,22 +1,25 @@
-import { CommunicationChannel } from "../enums/communication-channel.enum";
-import { CommsEventType, EmailMessageType, SmsMessageType, } from '../config/comms.enum';
+import { CommsEventType } from '../enums/comms-event-type.enum';
+import { CommunicationChannel } from '../enums/communication-channel.enum';
+import { EmailMessageType } from '../config/comms.enum';
+import { SmsMessageType } from '../config/comms.enum';
 
-export type MessageContext = {
-    userId: string;
-    orderId?:  string;
-    parentOrderId?: string;
-    email?: string;
-    phone?: string;
 
-    eventType: CommsEventType;
-    channels: CommunicationChannel[];
-    additionalData: Record<string, any>;
+export interface MessageContext {
+  userId: string;
+  orderId: string;
+  tenantId: string;
 
-    // Set by handlers
-    emailMessageType?: EmailMessageType;
-    smsMessageType?: SmsMessageType;
+  email?: string;
+  phone?: string;
 
-    // Set by processors
-    emailMessage?: string;
-    smsMessage?: string;
+  eventType: CommsEventType;
+  channels: CommunicationChannel[];
+
+  emailMessageType?: EmailMessageType;
+  smsMessageType?: SmsMessageType;
+
+  emailMessage?: string;
+  smsMessage?: string;
+
+  additionalData: Record<string, any>;
 }

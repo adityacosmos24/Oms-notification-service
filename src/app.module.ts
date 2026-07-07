@@ -1,7 +1,13 @@
 import { Module } from '@nestjs/common';
+import { MongooseModule } from '@nestjs/mongoose';
 import { NotificationModule } from './notification/notification.module';
 
 @Module({
-  imports: [NotificationModule],
+  imports: [
+    MongooseModule.forRoot(
+      process.env.MONGO_URI || 'mongodb://localhost:27017/notification_system',
+    ),
+    NotificationModule,
+  ],
 })
 export class AppModule {}
