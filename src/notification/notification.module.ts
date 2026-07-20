@@ -32,8 +32,9 @@ import {
 } from './schemas/tenant-config.schema';
 import { TenantConfigService } from './services/tenant-config.service';
 import { TenantConfigController } from './controllers/tenant-config.controller';
-
+import { OrderItemEntity } from './entities/order-item.entity';
 import { TestDataController } from './controllers/test-data.controller';
+import { MessageTypeResolver } from './resolvers/message-type.resolver';
 
 
 @Module({
@@ -53,7 +54,7 @@ import { TestDataController } from './controllers/test-data.controller';
         },
       },
     ]),
-    TypeOrmModule.forFeature([OrderEntity, RefundEntity]),
+    TypeOrmModule.forFeature([OrderEntity, RefundEntity, OrderItemEntity]),
     MongooseModule.forFeature([
       {
         name: TenantConfig.name,
@@ -61,7 +62,12 @@ import { TestDataController } from './controllers/test-data.controller';
       },
     ]),
   ],
-  controllers: [NotificationController, TenantConfigController, TestDataController],
+  controllers: [
+    NotificationController,
+    TenantConfigController,
+    TestDataController,
+    NotificationConsumer,
+  ],
   providers: [
     OrchestratorService,
     MessageProcessor,
@@ -70,6 +76,7 @@ import { TestDataController } from './controllers/test-data.controller';
     ReturnHandler,
     ExchangeHandler,
     RefundHandler,
+    MessageTypeResolver,
     HelpersService,
     EmailProcessor,
     SmsProcessor,
@@ -78,7 +85,6 @@ import { TestDataController } from './controllers/test-data.controller';
     SmsStrategy,
     CommunicationService,
     KafkaProducerService,
-    NotificationConsumer,
     TenantConfigService,
   ],
   exports: [KafkaProducerService, TenantConfigService],

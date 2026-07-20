@@ -1,50 +1,45 @@
-import { CommsEventType, EmailMessageType, SmsMessageType } from "../config/comms.enum";
-import { DEFAULT_EMAIL_MESSAGE_TYPE_MAP, DEFAULT_SMS_MESSAGE_TYPE_MAP } from "../config/comms.constants";
-import { MessageContext } from "../types/message-context.type";
+import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  CommsEventType,
+  EmailMessageType,
+  SmsMessageType,
+} from '../config/comms.enum';
+import {
+  DEFAULT_EMAIL_MESSAGE_TYPE_MAP,
+  DEFAULT_SMS_MESSAGE_TYPE_MAP,
+  SMS_QTY_VARIANT_MESSAGE_TYPE_MAP,
+} from '../config/comms.constants';
+import { MessageContext } from '../types/message-context.type';
+import { getItemCountBucket } from '../utils/item-count.util';
 
+@Injectable()
 export class MessageTypeResolver {
-  static resolveEmailMessageType(
-    eventType: CommsEventType,
-  ): EmailMessageType | undefined {
+  resolveEmailMessageType(eventType: CommsEventType): EmailMessageType {
     return DEFAULT_EMAIL_MESSAGE_TYPE_MAP[eventType];
   }
 
-  static resolveSmsMessageType(
-    context: MessageContext,
-  ): SmsMessageType | undefined {
-    switch (context.eventType) {
-      case CommsEventType.ORDER_CONFIRM:
-        return this.resolveOrderConfirmSmsType(context);
+  resolveSmsMessageType(context: MessageContext): SmsMessageType {
+    const { eventType } = context;
+    const itemCount = Number(context.additionalData?.itemCount || 1);
 
-      case CommsEventType.ORDER_SHIPPED:
-        return this.resolveOrderShippedSmsType(context);
-
-      default:
-        return DEFAULT_SMS_MESSAGE_TYPE_MAP[context.eventType];
-    }
-  }
-
-  private static resolveOrderConfirmSmsType(
-    context: MessageContext,
-  ): SmsMessageType {
-    const itemCount = context.additionalData.itemCount ?? 1;
-
-    if (itemCount > 1) {
-      return SmsMessageType.ORDER_CONFIRM_QTY_MORE;
+    if (eventType === CommsEventType.ORDER_CONFIRM) {
+      return itemCount > 1
+        ? SmsMessageType.ORDER_CONFIRM_QTY_MORE
+        : SmsMessageType.ORDER_CONFIRM;
     }
 
-    return SmsMessageType.ORDER_CONFIRM;
-  }
-
-  private static resolveOrderShippedSmsType(
-    context: MessageContext,
-  ): SmsMessageType {
-    const itemCount = context.additionalData.itemCount ?? 1;
-
-    if (itemCount === 2) {
-      return SmsMessageType.ORDER_SHIPPED_QTY_2;
+    const qtyVariants = SMS_QTY_VARIANT_MESSAGE_TYPE_MAP[eventType];
+    if (qtyVariants) {
+      return qtyVariants[getItemCountBucket(itemCount)];
     }
 
-    return SmsMessageType.ORDER_SHIPPED;
+    const smsMessageType = DEFAULT_SMS_MESSAGE_TYPE_MAP[eventType];
+    if (!smsMessageType) {
+      throw new BadRequestException(
+        `No SMS message type mapped for event ${eventType}`,
+      );
+    }
+
+    return smsMessageType;
   }
 }

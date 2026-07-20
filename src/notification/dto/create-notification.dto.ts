@@ -5,7 +5,7 @@ import {
   IsOptional,
   IsString,
 } from 'class-validator';
-import { CommsEventType } from '../enums/comms-event-type.enum';
+import { CommsEventType } from '../config/comms.enum';
 import { CommunicationChannel } from '../enums/communication-channel.enum';
 
 export class CreateNotificationDto {

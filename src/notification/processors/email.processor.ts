@@ -2,6 +2,51 @@ import { Injectable, BadRequestException } from '@nestjs/common';
 import { MessageContext } from '../types/message-context.type';
 import { EmailMessageType } from '../config/comms.enum';
 
+type EmailTemplateBuilder = (context: MessageContext) => string;
+
+/**
+ * Full Record so the compiler forces a template
+ * whenever a new email message type is added.
+ */
+const EMAIL_TEMPLATES: Record<EmailMessageType, EmailTemplateBuilder> = {
+  [EmailMessageType.ORDER_CONFIRM]: (ctx) =>
+    `Hi ${customerName(ctx)}, your order ${ctx.orderId} has been confirmed. Total amount: ₹${ctx.additionalData.orderAmount}. Items: ${ctx.additionalData.itemCount}.`,
+
+  [EmailMessageType.ORDER_SHIPPED]: (ctx) =>
+    `Hi ${customerName(ctx)}, your order ${ctx.orderId} has been shipped.`,
+
+  [EmailMessageType.ORDER_DELIVERED]: (ctx) =>
+    `Hi ${customerName(ctx)}, your order ${ctx.orderId} has been delivered.`,
+
+  [EmailMessageType.ORDER_DELIVERY_DELAYED]: (ctx) =>
+    `Hi ${customerName(ctx)}, delivery of your order ${ctx.orderId} has been delayed. We are sorry for the inconvenience.`,
+
+  [EmailMessageType.ORDER_CANCELLED]: (ctx) =>
+    `Hi ${customerName(ctx)}, your order ${ctx.orderId} has been cancelled.`,
+
+  [EmailMessageType.ORDER_FAILED]: (ctx) =>
+    `Hi ${customerName(ctx)}, your order ${ctx.orderId} has failed.`,
+
+  [EmailMessageType.RETURN_INITIATED]: (ctx) =>
+    `Hi ${customerName(ctx)}, return has been initiated for order ${ctx.orderId}.`,
+
+  [EmailMessageType.RETURN_CANCELLED]: (ctx) =>
+    `Hi ${customerName(ctx)}, return has been cancelled for order ${ctx.orderId}.`,
+
+  [EmailMessageType.EXCHANGE_INITIATED]: (ctx) =>
+    `Hi ${customerName(ctx)}, exchange has been initiated for order ${ctx.orderId}.`,
+
+  [EmailMessageType.EXCHANGE_CANCELLED]: (ctx) =>
+    `Hi ${customerName(ctx)}, exchange has been cancelled for order ${ctx.orderId}.`,
+
+  [EmailMessageType.REFUND_INITIATED]: (ctx) =>
+    `Hi ${customerName(ctx)}, refund of ₹${ctx.additionalData.refundAmount} has been initiated for order ${ctx.orderId} via ${ctx.additionalData.refundMode}.`,
+};
+
+function customerName(context: MessageContext): string {
+  return context.additionalData.customerName ?? 'Customer';
+}
+
 @Injectable()
 export class EmailProcessor {
   process(context: MessageContext): void {
@@ -9,59 +54,14 @@ export class EmailProcessor {
       throw new BadRequestException('emailMessageType is missing in context');
     }
 
-    const customerName = context.additionalData.customerName ?? 'Customer';
-    const orderId = context.orderId ?? '';
-    const orderAmount = context.additionalData.orderAmount;
-    const itemCount = context.additionalData.itemCount;
-    const refundAmount = context.additionalData.refundAmount;
-    const refundMode = context.additionalData.refundMode;
-    const exchangeProductName = context.additionalData.exchangeProductName;
+    const buildTemplate = EMAIL_TEMPLATES[context.emailMessageType];
 
-    switch (context.emailMessageType) {
-      case EmailMessageType.ORDER_CONFIRM:
-        context.emailMessage = `Hi ${customerName}, your order ${orderId} has been confirmed. Total amount: ₹${orderAmount}. Items: ${itemCount}.`;
-        return;
-
-      case EmailMessageType.ORDER_SHIPPED:
-        context.emailMessage = `Hi ${customerName}, your order ${orderId} has been shipped.`;
-        return;
-
-      case EmailMessageType.ORDER_DELIVERED:
-        context.emailMessage = `Hi ${customerName}, your order ${orderId} has been delivered.`;
-        return;
-
-      case EmailMessageType.ORDER_CANCELLED:
-        context.emailMessage = `Hi ${customerName}, your order ${orderId} has been cancelled.`;
-        return;
-
-      case EmailMessageType.ORDER_FAILED:
-        context.emailMessage = `Hi ${customerName}, your order ${orderId} has failed.`;
-        return;
-
-      case EmailMessageType.RETURN_INITIATED:
-        context.emailMessage = `Hi ${customerName}, return has been initiated for order ${orderId}.`;
-        return;
-
-      case EmailMessageType.RETURN_CANCELLED:
-        context.emailMessage = `Hi ${customerName}, return has been cancelled for order ${orderId}.`;
-        return;
-
-      case EmailMessageType.EXCHANGE_INITIATED:
-        context.emailMessage = `Hi ${customerName}, exchange has been initiated for ${exchangeProductName} in order ${orderId}.`;
-        return;
-
-      case EmailMessageType.EXCHANGE_CANCELLED:
-        context.emailMessage = `Hi ${customerName}, exchange has been cancelled for order ${orderId}.`;
-        return;
-
-      case EmailMessageType.REFUND_INITIATED:
-        context.emailMessage = `Hi ${customerName}, refund of ₹${refundAmount} has been initiated for order ${orderId} via ${refundMode}.`;
-        return;
-
-      default:
-        throw new BadRequestException(
-          `Unsupported emailMessageType: ${context.emailMessageType}`,
-        );
+    if (!buildTemplate) {
+      throw new BadRequestException(
+        `Unsupported emailMessageType: ${context.emailMessageType}`,
+      );
     }
+
+    context.emailMessage = buildTemplate(context);
   }
 }

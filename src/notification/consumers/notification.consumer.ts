@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Controller, Logger } from '@nestjs/common';
 import {
   EventPattern,
   Payload,
@@ -9,7 +9,7 @@ import { CreateNotificationDto } from '../dto/create-notification.dto';
 import { OrchestratorService } from '../services/orchestrator.service';
 import { KAFKA_TOPICS } from '../config/kafka.constants';
 
-@Injectable()
+@Controller()
 export class NotificationConsumer {
   private readonly logger = new Logger(NotificationConsumer.name);
 

@@ -5,12 +5,10 @@ import { EmailProcessor } from './email.processor';
 import { SmsProcessor } from './sms.processor';
 import { ChannelStrategyFactory } from '../factories/channel-strategy.factory';
 import { CommunicationChannel } from '../enums/communication-channel.enum';
-import { send } from 'process';
 
 @Injectable()
 export class MessageProcessor {
-    private readonly logger = new Logger(MessageProcessor.name);
-
+  private readonly logger = new Logger(MessageProcessor.name);
 
   constructor(
     private readonly baseHandler: BaseHandler,
@@ -22,7 +20,7 @@ export class MessageProcessor {
   async process(context: MessageContext): Promise<MessageContext> {
     this.validateContext(context);
 
-    // Step 1: domain handler decides logical message key
+    // Step 1: domain handler enriches data and resolves message types
     await this.baseHandler.process(context);
 
     // Step 2: build channel-specific message payloads
@@ -59,50 +57,40 @@ export class MessageProcessor {
   }
 
   private async sendThroughChannels(context: MessageContext): Promise<void> {
-    const sendTask: Promise<void>[] = [];
+    const sendTasks: Promise<void>[] = [];
 
-    if(this.canSendEmail(context)) {
-        const emailStrategy = this.channelStrategyFactory.getStrategy(
-            CommunicationChannel.EMAIL,
-        );
-
-        sendTask.push(emailStrategy.send(context));
-    }
-    else if(context.channels.includes(CommunicationChannel.EMAIL)) {
+    for (const channel of context.channels) {
+      if (!this.canSend(channel, context)) {
         this.logger.debug(
-            `Skipping EMAIL for user ${context.userId} because recipient or message is missing`,
+          `Skipping ${channel} for user ${context.userId} because recipient or message is missing`,
         );
+        continue;
+      }
+
+      const strategy = this.channelStrategyFactory.getStrategy(channel);
+      sendTasks.push(strategy.send(context));
     }
 
-    if(this.canSendSms(context)) {
-        const smsStrategy = this.channelStrategyFactory.getStrategy(
-            CommunicationChannel.SMS,
-        );
+    const results = await Promise.allSettled(sendTasks);
 
-        sendTask.push(smsStrategy.send(context));
-    }
-    else if(context.channels.includes(CommunicationChannel.SMS)) {
-        this.logger.debug(
-            `Skipping SMS for user ${context.userId} because recipient or message is missing`,
-        );
-    }
-
-    const results = await Promise.allSettled(sendTask);
-
-    results.forEach((result, index)=> {
-        if(result.status === 'rejected') {
-            this.logger.error(
-                `Channel send task ${index} failed: ${result.reason}`,
-            );
-        }
+    results.forEach((result, index) => {
+      if (result.status === 'rejected') {
+        this.logger.error(`Channel send task ${index} failed: ${result.reason}`);
+      }
     });
   }
-  
-  private canSendEmail(context: MessageContext): boolean {
-    return !!context.email && !! context.emailMessage;
-  }
-  
-  private canSendSms(context: MessageContext): boolean {
-    return !!context.email && !!context.smsMessage;
+
+  private canSend(
+    channel: CommunicationChannel,
+    context: MessageContext,
+  ): boolean {
+    switch (channel) {
+      case CommunicationChannel.EMAIL:
+        return !!context.email && !!context.emailMessage;
+      case CommunicationChannel.SMS:
+        return !!context.phone && !!context.smsMessage;
+      default:
+        return false;
+    }
   }
 }

@@ -1,21 +1,19 @@
 import { Body, Controller, Post } from '@nestjs/common';
 import { CreateNotificationDto } from '../dto/create-notification.dto';
 import { KafkaProducerService } from '../services/kafka-producer.service';
-import { OrchestratorService } from '../services/orchestrator.service';
 
 @Controller('notifications')
 export class NotificationController {
-  constructor(
-    private readonly kafkaProducerService: KafkaProducerService,
-    private readonly orchestratorService: OrchestratorService,
-  ) {}
+  constructor(private readonly kafkaProducerService: KafkaProducerService) {}
 
   /**
-   * Real architecture entry:
-   * Publish notification event to Kafka
+   * Publish a notification event to Kafka.
+   * The NotificationConsumer picks it up and runs the processing pipeline.
    */
   @Post('publish')
-  async publishNotification(@Body() createNotificationDto: CreateNotificationDto) {
+  async publishNotification(
+    @Body() createNotificationDto: CreateNotificationDto,
+  ) {
     await this.kafkaProducerService.publishNotificationEvent(
       createNotificationDto,
     );
@@ -28,13 +26,5 @@ export class NotificationController {
         channels: createNotificationDto.channels,
       },
     };
-  }
-
-  /**
-   * Temporary direct-processing endpoint for debugging
-   */
-  @Post('process')
-  async processNotification(@Body() createNotificationDto: CreateNotificationDto) {
-    return this.orchestratorService.processNotification(createNotificationDto);
   }
 }

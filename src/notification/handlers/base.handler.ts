@@ -5,7 +5,7 @@ import { RefundHandler } from './refund.handler';
 import { ReturnHandler } from './return.handler';
 import { MessageContext } from '../types/message-context.type';
 import { IEventHandler } from '../interfaces/event-handler.interface';
-import { CommsEventType, EmailMessageType, SmsMessageType, } from '../config/comms.enum';
+import { CommsEventType } from '../config/comms.enum';
 
 @Injectable()
 export class BaseHandler {

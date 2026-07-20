@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { OrderEntity } from '../entities/order.entity';
 import { RefundEntity } from '../entities/refund.entity';
+import { OrderItemEntity } from '../entities/order-item.entity';
 
 @Injectable()
 export class HelpersService {
@@ -12,6 +13,9 @@ export class HelpersService {
 
     @InjectRepository(RefundEntity)
     private readonly refundRepository: Repository<RefundEntity>,
+
+    @InjectRepository(OrderItemEntity)
+    private readonly orderItemRepository: Repository<OrderItemEntity>,
   ) {}
 
   async getOrderDetails(orderId: string) {
@@ -23,6 +27,15 @@ export class HelpersService {
       throw new NotFoundException(`Order not found for orderId=${orderId}`);
     }
 
+    const orderItems = await this.orderItemRepository.find({
+      where: { orderId },
+    });
+
+    const totalItemCount = orderItems.reduce(
+      (sum, item) => sum + item.quantity,
+      0,
+    );
+
     return {
       orderId: order.orderId,
       userId: order.userId,
@@ -31,7 +44,16 @@ export class HelpersService {
       email: order.email,
       phone: order.phone,
       orderAmount: Number(order.orderAmount),
-      itemCount: order.itemCount,
+
+      // Prefer the real per-item quantities; fall back to the denormalized count
+      itemCount: totalItemCount || order.itemCount,
+
+      items: orderItems.map((item) => ({
+        productName: item.productName,
+        quantity: item.quantity,
+        price: Number(item.price),
+      })),
+
       status: order.status,
     };
   }

@@ -1,8 +1,9 @@
-import { CommsEventType } from '../enums/comms-event-type.enum';
+import {
+  CommsEventType,
+  EmailMessageType,
+  SmsMessageType,
+} from '../config/comms.enum';
 import { CommunicationChannel } from '../enums/communication-channel.enum';
-import { EmailMessageType } from '../config/comms.enum';
-import { SmsMessageType } from '../config/comms.enum';
-
 
 export interface MessageContext {
   userId: string;

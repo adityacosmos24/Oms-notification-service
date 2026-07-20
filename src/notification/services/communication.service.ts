@@ -1,7 +1,14 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 
+/**
+ * Boundary to the actual email/SMS providers.
+ * Currently logs the outgoing message; swap the bodies with
+ * real provider SDK calls when integrating.
+ */
 @Injectable()
 export class CommunicationService {
+  private readonly logger = new Logger(CommunicationService.name);
+
   async sendEmailNotification(payload: {
     userId: string;
     email: string;
@@ -9,8 +16,8 @@ export class CommunicationService {
   }): Promise<void> {
     const { userId, email, message } = payload;
 
-    console.log(
-      `[CommunicationService] Sending EMAIL to ${email} for user ${userId}`,
+    this.logger.log(
+      `Sending EMAIL to ${email} for user ${userId}: ${message}`,
     );
   }
 
@@ -18,11 +25,12 @@ export class CommunicationService {
     userId: string;
     phone: string;
     message: string;
+    templateId?: string;
   }): Promise<void> {
-    const { userId, phone, message } = payload;
+    const { userId, phone, message, templateId } = payload;
 
-    console.log(
-      `[CommunicationService] Sending SMS to ${phone} for user ${userId}`,
+    this.logger.log(
+      `Sending SMS to ${phone} for user ${userId} (templateId=${templateId}): ${message}`,
     );
   }
 }
