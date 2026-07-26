@@ -25,34 +25,80 @@ When a customer places an order, receives a refund, or initiates a return — th
 
 ## 🏗️ Architecture Overview
 
-```
-┌──────────┐     POST /notifications/publish     ┌─────────────────────────────────────────┐
-│          │ ──────────────────────────────────► │  NestJS Notification Service             │
-│  OMS /   │                                     │                                         │
-│  Client  │     publish event                   │  ┌─────────────────┐                    │
-│          │ ──────────► Kafka ──────────────►  │  │ Notification    │                    │
-└──────────┘             (topic)                 │  │ Consumer        │                    │
-                                                 │  └────────┬────────┘                    │
-                                                 │           │                             │
-                                                 │           ▼                             │
-                         ┌──────────┐            │  ┌─────────────────┐                    │
-                         │ MongoDB  │◄───────── │  │ Orchestrator    │                    │
-                         │ (tenant  │  resolve   │  │ Service         │                    │
-                         │  config) │  channels  │  └────────┬────────┘                    │
-                         └──────────┘            │           │                             │
-                                                 │           ▼                             │
-                         ┌──────────┐            │  ┌─────────────────┐                    │
-                         │ MariaDB  │◄───────── │  │ Message         │                    │
-                         │ (orders, │  fetch     │  │ Processor       │                    │
-                         │ refunds) │  data      │  └────────┬────────┘                    │
-                         └──────────┘            │           │                             │
-                                                 │     ┌─────┴──────┐                     │
-                                                 │     ▼            ▼                     │
-                                                 │  ┌───────┐  ┌───────┐                  │
-                                                 │  │ Email │  │  SMS  │  ──► Providers   │
-                                                 │  │Strategy│ │Strategy│                  │
-                                                 │  └───────┘  └───────┘                  │
-                                                 └─────────────────────────────────────────┘
+```mermaid
+graph TB
+    subgraph "🌐 OUTSIDE WORLD"
+        API["📱 API Call<br/>(POST /notifications/publish)"]
+        OMS["🛒 Order Management System<br/>(or any external service)"]
+    end
+
+    subgraph "📮 MESSAGE QUEUE"
+        KAFKA["📨 Kafka<br/>(Message Broker)<br/>Acts like a post office"]
+    end
+
+    subgraph "🧠 THIS PROJECT — Notification Service"
+        CONSUMER["👂 Consumer<br/>Listens to Kafka"]
+        ORCH["🎯 Orchestrator<br/>The BOSS - coordinates everything"]
+        TENANT["🏢 Tenant Config<br/>Which channels for which brand?"]
+        
+        subgraph "📋 STEP 1: Understand the Event"
+            BASE_H["🔀 Base Handler<br/>Traffic cop - routes to right handler"]
+            ORDER_H["📦 Order Handler"]
+            RETURN_H["↩️ Return Handler"]
+            EXCHANGE_H["🔄 Exchange Handler"]
+            REFUND_H["💰 Refund Handler"]
+        end
+
+        subgraph "📝 STEP 2: Build the Message"
+            MSG_PROC["⚙️ Message Processor<br/>Main assembly line"]
+            EMAIL_PROC["✉️ Email Processor<br/>Builds email text"]
+            SMS_PROC["📲 SMS Processor<br/>Builds SMS text"]
+            RESOLVER["🔍 Message Type Resolver<br/>Picks the right template"]
+        end
+
+        subgraph "🚀 STEP 3: Send the Message"
+            FACTORY["🏭 Channel Strategy Factory<br/>Picks EMAIL or SMS sender"]
+            EMAIL_STRAT["✉️ Email Strategy"]
+            SMS_STRAT["📲 SMS Strategy"]
+            COMM_SVC["📡 Communication Service<br/>Actually sends the message"]
+        end
+    end
+
+    subgraph "💾 DATABASES"
+        MYSQL["🗄️ MariaDB/MySQL<br/>Orders, Refunds, Order Items"]
+        MONGO["🍃 MongoDB<br/>Tenant Configurations"]
+    end
+
+    API -->|"publishes event"| KAFKA
+    OMS -->|"publishes event"| KAFKA
+    KAFKA -->|"delivers event"| CONSUMER
+    CONSUMER -->|"hands event to"| ORCH
+    ORCH -->|"checks which channels"| TENANT
+    TENANT -->|"reads config from"| MONGO
+    ORCH -->|"starts processing"| MSG_PROC
+    MSG_PROC -->|"Step 1"| BASE_H
+    BASE_H -->|"order events"| ORDER_H
+    BASE_H -->|"return events"| RETURN_H
+    BASE_H -->|"exchange events"| EXCHANGE_H
+    BASE_H -->|"refund events"| REFUND_H
+    ORDER_H -->|"fetches order data"| MYSQL
+    REFUND_H -->|"fetches refund data"| MYSQL
+    ORDER_H -->|"resolves template type"| RESOLVER
+    MSG_PROC -->|"Step 2a"| EMAIL_PROC
+    MSG_PROC -->|"Step 2b"| SMS_PROC
+    MSG_PROC -->|"Step 3"| FACTORY
+    FACTORY -->|"EMAIL channel"| EMAIL_STRAT
+    FACTORY -->|"SMS channel"| SMS_STRAT
+    EMAIL_STRAT --> COMM_SVC
+    SMS_STRAT --> COMM_SVC
+
+    style API fill:#4CAF50,color:#fff
+    style KAFKA fill:#FF9800,color:#fff
+    style CONSUMER fill:#2196F3,color:#fff
+    style ORCH fill:#E91E63,color:#fff
+    style MYSQL fill:#00BCD4,color:#fff
+    style MONGO fill:#8BC34A,color:#fff
+    style COMM_SVC fill:#9C27B0,color:#fff
 ```
 
 ---
@@ -105,6 +151,68 @@ All channels are dispatched **concurrently** using `Promise.allSettled()` — if
 ### Step 6 — Communication Service (Outbound Gateway)
 The **CommunicationService** is the final boundary. Currently it logs the outgoing message — swap the method bodies with real provider SDK calls (SendGrid, Twilio, MSG91, etc.) when integrating.
 
+### 📊 Complete Flow — Sequence Diagram
+
+```mermaid
+sequenceDiagram
+    participant User as 📱 API / External System
+    participant Kafka as 📨 Kafka Queue
+    participant Consumer as 👂 Kafka Consumer
+    participant Orchestrator as 🎯 Orchestrator
+    participant TenantConfig as 🏢 Tenant Config
+    participant MongoDB as 🍃 MongoDB
+    participant MsgProcessor as ⚙️ Message Processor
+    participant BaseHandler as 🔀 Base Handler
+    participant OrderHandler as 📦 Order Handler
+    participant MySQL as 🗄️ MySQL
+    participant Resolver as 🔍 Type Resolver
+    participant EmailProc as ✉️ Email Processor
+    participant SmsProc as 📲 SMS Processor
+    participant Factory as 🏭 Strategy Factory
+    participant CommService as 📡 Communication Service
+
+    User->>Kafka: POST /notifications/publish<br/>{"orderId": "ORD_1001", "eventType": "ORDER_CONFIRM"}
+    
+    Note over Kafka: Message sits in queue<br/>until consumer picks it up
+    
+    Kafka->>Consumer: Delivers the message
+    Consumer->>Orchestrator: processNotification(payload)
+    
+    Note over Orchestrator: "Which channels should I use?"
+    Orchestrator->>TenantConfig: resolveChannels("bewakoof", "ORDER_CONFIRM")
+    TenantConfig->>MongoDB: Find config for this tenant + event
+    MongoDB-->>TenantConfig: ["EMAIL", "SMS"]
+    TenantConfig-->>Orchestrator: channels = [EMAIL, SMS]
+    
+    Note over Orchestrator: Creates a MessageContext<br/>(like a work order on the assembly line)
+    
+    Orchestrator->>MsgProcessor: process(context)
+    
+    Note over MsgProcessor: STEP 1: Enrich the data
+    MsgProcessor->>BaseHandler: process(context)
+    BaseHandler->>OrderHandler: handle(context)
+    OrderHandler->>MySQL: getOrderDetails("ORD_1001")
+    MySQL-->>OrderHandler: {customerName: "Aditya", email: "...", itemCount: 2, ...}
+    OrderHandler->>Resolver: resolveEmailMessageType(ORDER_CONFIRM)
+    Resolver-->>OrderHandler: EmailMessageType.ORDER_CONFIRM
+    OrderHandler->>Resolver: resolveSmsMessageType(context)
+    Resolver-->>OrderHandler: SmsMessageType.ORDER_CONFIRM_QTY_MORE (because qty > 1)
+    
+    Note over MsgProcessor: STEP 2: Build message text
+    MsgProcessor->>EmailProc: process(context)
+    EmailProc-->>MsgProcessor: emailMessage = "Hi Aditya, your order ORD_1001 has been confirmed..."
+    MsgProcessor->>SmsProc: process(context)
+    SmsProc-->>MsgProcessor: smsMessage = "Order ORD_1001 confirmed for 2 items. - MyOMS"
+    
+    Note over MsgProcessor: STEP 3: Send messages
+    MsgProcessor->>Factory: getStrategy(EMAIL)
+    MsgProcessor->>Factory: getStrategy(SMS)
+    Factory->>CommService: sendEmailNotification({...})
+    Factory->>CommService: sendSmsNotification({...})
+    
+    Note over CommService: Currently LOGS the message<br/>(replace with real provider like SendGrid/Twilio later)
+```
+
 ---
 
 ## 🛠️ Tech Stack
@@ -124,13 +232,44 @@ The **CommunicationService** is the final boundary. Currently it logs the outgoi
 
 ## 🧩 Design Patterns Used
 
+```mermaid
+mindmap
+  root((Design Patterns<br/>in This Project))
+    Strategy Pattern
+      What: Different ways to do the same thing
+      Where: EmailStrategy & SmsStrategy
+      Why: Easy to add WhatsApp, Push later
+    Factory Pattern
+      What: A factory that creates the right object
+      Where: ChannelStrategyFactory
+      Why: You ask for EMAIL, it gives you the Email sender
+    Template Method Pattern
+      What: Define the steps, let children fill the details
+      Where: AbstractEventHandler
+      Why: All handlers follow same flow, only data-fetching differs
+    Pipeline Pattern
+      What: Data flows through steps in sequence
+      Where: MessageProcessor
+      Why: Step 1 enrich → Step 2 build → Step 3 send
+    DTO Pattern
+      What: A strict shape for incoming data
+      Where: CreateNotificationDto
+      Why: Validates data before processing
+    Multi-Tenancy
+      What: One system serves multiple brands
+      Where: TenantConfigService
+      Why: Bewakoof gets EMAIL+SMS, another brand might get only EMAIL
+```
+
 | Pattern | Where | Why |
 |---|---|---|
 | **Strategy Pattern** | `ChannelStrategyFactory`, `EmailStrategy`, `SmsStrategy` | Channels are interchangeable — adding WhatsApp/Push is just a new class + registration |
 | **Factory Pattern** | `ChannelStrategyFactory` | Runtime channel selection from a `Map<Channel, Strategy>` |
 | **Template Method** | `AbstractEventHandler` → domain handlers | Shared flow (fetch → merge → resolve) with customizable `fetchEventDetails()` |
 | **Registry Pattern** | `BaseHandler.eventHandlerMap` | Routes events to handlers via a `Map`, zero switch-case |
-| **Builder Pattern** | `EmailProcessor`, `SmsProcessor` template maps | Full `Record<MessageType, Builder>` enforced by TypeScript compiler |
+| **Pipeline Pattern** | `MessageProcessor` | Data flows: validate → enrich → build → send in sequence |
+| **DTO Pattern** | `CreateNotificationDto` with `class-validator` | Validates incoming data at the door — bad payloads get rejected |
+| **Multi-Tenancy** | `TenantConfigService` + MongoDB | One system serves multiple brands, each with different channel configs |
 | **Dependency Injection** | Entire project via NestJS `@Injectable()` | Loose coupling, testability |
 
 ---
